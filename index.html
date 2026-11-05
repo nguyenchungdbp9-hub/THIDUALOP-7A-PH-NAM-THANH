@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sổ Thi Đua Lớp 7 - Quản lý Điện tử</title>
+    <title>Sổ Thi Đua Lớp 7A - Quản lý Điện tử</title>
     
     <!-- Nhúng TailwindCSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -13,6 +14,28 @@
 
     <style>
         body { font-family: 'Inter', sans-serif; }
+        
+        /* Thêm hiệu ứng nổi 3D (Floating) tự động cho cây */
+        @keyframes float3D {
+            0% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-8px) scale(1.05); }
+            100% { transform: translateY(0px) scale(1); }
+        }
+        .tree-3d-tot {
+            animation: float3D 3s ease-in-out infinite;
+            filter: drop-shadow(0 15px 10px rgba(220, 38, 38, 0.4)) brightness(1.1);
+        }
+        .tree-3d-kha {
+            animation: float3D 4s ease-in-out infinite;
+            filter: drop-shadow(0 10px 8px rgba(202, 138, 4, 0.3));
+        }
+        .tree-3d-dat {
+            animation: float3D 5s ease-in-out infinite;
+            filter: drop-shadow(0 5px 5px rgba(22, 163, 74, 0.2));
+        }
+        .tree-3d-truot {
+            filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.1)) grayscale(0.8);
+        }
     </style>
 </head>
 <body>
@@ -29,7 +52,7 @@
             XCircle, BarChart3, ShieldAlert, Users, 
             Smartphone, Search, Filter, ShieldCheck,
             LogOut, PlusCircle, CheckSquare, X, Download,
-            TrendingUp, TrendingDown, Minus, Calendar
+            TrendingUp, TrendingDown, Minus, Calendar, Lock
         } from 'https://esm.sh/lucide-react@0.344.0?deps=react@18';
 
         // --- DATA: STUDENTS ---
@@ -77,7 +100,7 @@
             { id: 8, categoryId: 'II', name: 'Đầu tóc, diện mạo không đúng nội quy', point: -5 },
             { id: 9, categoryId: 'III', name: 'Quên SGK, vở ghi, đồ dùng học tập', point: -3 },
             { id: 10, categoryId: 'III', name: 'Không làm bài tập, không học bài cũ', point: -5 },
-            { id: 11, categoryId: 'III', name: 'Nói chuyện riêng, làm việc riêng, quay cóp, ngủ gật', point: -5 },
+            { id: 11, categoryId: 'III', name: 'Nói chuyện riêng, làm việc riêng, ngủ gật', point: -5 },
             { id: 12, categoryId: 'III', name: 'Đạt điểm 9 hoặc 10 trong bài kiểm tra', point: 3 },
             { id: 13, categoryId: 'III', name: 'Được giáo viên bộ môn khen ngợi', point: 3 },
             { id: 14, categoryId: 'IV', name: 'Tự ý mang điện thoại đến lớp khi chưa được phép', point: -50 },
@@ -96,20 +119,92 @@
             { id: 27, categoryId: 'VII', name: 'Có lời nói, hành vi thiếu tôn trọng thầy cô, nhân viên', point: -20 },
             { id: 28, categoryId: 'VII', name: 'Đánh nhau, đe dọa, gây gổ, cổ vũ bạo lực', point: -30 },
             { id: 29, categoryId: 'VII', name: 'Nhặt được của rơi trả lại, giúp đỡ bạn, làm việc tốt', point: 7 },
-            { id: 30, categoryId: 'VII', name: 'Khen thưởng đột xuất', point: 10 }
+            { id: 30, categoryId: 'VII', name: 'Khen thưởng đột xuất', point: 10 },
+            { id: 31, categoryId: 'VII', name: 'Hành vi ảnh hưởng đến lớp (lái xe lạng lách, đăng tin sai sự thật, tiêu cực)', point: -20 },
+            { id: 32, categoryId: 'III', name: 'Quay bài, chép bài bạn, gian lận trong thi cử', point: -20 }
         ];
 
         // --- HELPER FUNCTIONS ---
-        const getRanking = (score) => {
-            if (score >= 90) return { label: 'Tốt', color: 'text-green-600', bg: 'bg-green-100' };
-            if (score >= 75) return { label: 'Khá', color: 'text-blue-600', bg: 'bg-blue-100' };
-            if (score >= 60) return { label: 'Trung bình', color: 'text-yellow-600', bg: 'bg-yellow-100' };
-            return { label: 'Chưa đạt', color: 'text-red-600', bg: 'bg-red-100' };
+        const getRanking = (score, plus, minus) => {
+            // Xác định xếp loại thi đua theo chuẩn
+            let label = 'Chưa đạt'; let color = 'text-stone-600'; let bg = 'bg-stone-100 border-stone-300';
+            if (score >= 90) { label = 'Tốt'; color = 'text-red-700'; bg = 'bg-red-50 border-red-200'; }
+            else if (score >= 75) { label = 'Khá'; color = 'text-yellow-700'; bg = 'bg-yellow-50 border-yellow-200'; }
+            else if (score >= 60) { label = 'Trung bình'; color = 'text-green-700'; bg = 'bg-green-50 border-green-200'; }
+
+            // Hiệu ứng 3D CSS tùy theo tình trạng Cây (dựa vào điểm cộng / trừ)
+            let tree = '🌱';
+            let treeClass = 'text-3xl tree-3d-dat transform hover:scale-110 transition-all duration-300';
+            
+            if (plus === 0 && minus === 0) {
+                tree = '🌱'; // Hạt nảy mầm (Chưa có lỗi cũng chưa có thưởng)
+                treeClass = 'text-3xl tree-3d-dat transform hover:scale-110 transition-all duration-300 opacity-90';
+            } else if (score > 100) {
+                if (score >= 115) {
+                    tree = '🌳🍎'; // Quả to, chín đỏ
+                    treeClass = 'text-5xl tree-3d-tot transform hover:scale-150 transition-all duration-300 z-10 relative';
+                } else if (score >= 107) {
+                    tree = '🌳🌸'; // Ra hoa
+                    treeClass = 'text-4xl tree-3d-kha transform hover:scale-125 transition-all duration-300 relative';
+                } else {
+                    tree = '🌳🌿'; // Ra lá
+                    treeClass = 'text-4xl tree-3d-dat transform hover:scale-110 transition-all duration-300';
+                }
+            } else if (score < 100) {
+                if (score >= 90) {
+                    tree = '🥀'; // Héo nhẹ
+                    treeClass = 'text-3xl tree-3d-truot opacity-80 transform hover:rotate-6 transition-all duration-300';
+                } else if (score >= 75) {
+                    tree = '🍂'; // Rụng lá
+                    treeClass = 'text-3xl tree-3d-truot opacity-60 transform hover:-rotate-12 transition-all duration-300';
+                } else {
+                    tree = '🪵🐛'; // Chết, trơ trọi, sâu bọ
+                    treeClass = 'text-2xl tree-3d-truot opacity-50 transform hover:rotate-12 transition-all duration-500 grayscale';
+                }
+            } else {
+                // Điểm = 100 nhưng có cả cộng và trừ (Bù trừ nhau)
+                tree = '🌿'; 
+                treeClass = 'text-3xl tree-3d-dat transform hover:scale-110 transition-all duration-300';
+            }
+
+            return { label, color, bg, tree, treeClass };
         };
 
         const getCriterionStr = (id) => {
             const c = criteriaList.find(x => x.id === id);
             return c ? `${c.name} (${c.point > 0 ? '+' : ''}${c.point})` : 'Không xác định';
+        };
+
+        // Đưa hàm tính điểm ra ngoài để dùng chung cho cả Bảng điểm và Vườn cây
+        const getScoreForPeriod = (student, filterVal, isWeek, confirmedIncidents) => {
+            let score = 100;
+            let plus = 0;
+            let minus = 0;
+            let phoneViolations = 0;
+
+            let periodIncidents = [];
+            if (isWeek) {
+                const weekAgo = new Date();
+                weekAgo.setDate(weekAgo.getDate() - 7);
+                periodIncidents = confirmedIncidents.filter(i => new Date(i.date) >= weekAgo);
+            } else {
+                periodIncidents = confirmedIncidents.filter(i => i.date.startsWith(filterVal));
+            }
+
+            const personal = periodIncidents.filter(i => i.studentId === student.id);
+            personal.forEach(inc => {
+                if (inc.point > 0) plus += inc.point;
+                else minus += Math.abs(inc.point);
+                if (inc.criteriaId === 14) phoneViolations++;
+            });
+
+            const groupIncidents = periodIncidents.filter(i => i.criteriaId === 23 && i.groupId === student.group);
+            groupIncidents.forEach(inc => {
+                minus += Math.abs(inc.point);
+            });
+
+            score = score + plus - minus;
+            return { score, plus, minus, phoneViolations };
         };
 
         // --- MAIN APP COMPONENT ---
@@ -118,40 +213,16 @@
             const [role, setRole] = useState(null); // 'GVCN', 'CAN_SU', 'SAO_DO', 'TO_TRUONG'
             const [view, setView] = useState('DASHBOARD');
             
-            // Fake db cho sự kiện vi phạm
-            const [incidents, setIncidents] = useState([
-                {
-                    id: 'INC1', studentId: 'HS05', criteriaId: 1, point: -3, 
-                    reporterRole: 'SAO_DO', reporterName: 'Đội Cờ Đỏ', date: '2026-10-25',
-                    status: 'confirmed', notes: 'Đi muộn 15p (Tháng trước)'
-                },
-                {
-                    id: 'INC2', studentId: 'HS12', criteriaId: 14, point: -50, 
-                    reporterRole: 'GVCN', reporterName: 'Cô Lan', date: '2026-11-02',
-                    status: 'pending', notes: 'Sử dụng điện thoại trong giờ Toán'
-                },
-                {
-                    id: 'INC3', studentId: 'HS05', criteriaId: 12, point: 3, 
-                    reporterRole: 'GVCN', reporterName: 'Cô Lan', date: '2026-11-04',
-                    status: 'confirmed', notes: 'Điểm 10 Toán'
-                },
-                {
-                    id: 'INC4', studentId: 'HS01', criteriaId: 12, point: 3, 
-                    reporterRole: 'GVCN', reporterName: 'Cô Lan', date: '2026-10-10',
-                    status: 'confirmed', notes: 'Điểm 9 Văn (Tháng trước)'
-                },
-                {
-                    id: 'INC5', studentId: 'HS01', criteriaId: 3, point: -10, 
-                    reporterRole: 'GVCN', reporterName: 'Cô Lan', date: '2026-11-05',
-                    status: 'confirmed', notes: 'Bỏ vị trí'
-                }
-            ]);
+            // Xóa toàn bộ dữ liệu mẫu, đưa tất cả về điểm xuất phát
+            const [incidents, setIncidents] = useState([]);
 
             const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
 
             const handleLogin = (selectedRole) => {
                 setRole(selectedRole);
-                setView(selectedRole === 'GVCN' ? 'APPROVAL' : 'RECORD');
+                if (selectedRole === 'GVCN') setView('APPROVAL');
+                else if (selectedRole === 'HOC_SINH') setView('GARDEN');
+                else setView('RECORD');
             };
 
             const handleLogout = () => {
@@ -163,28 +234,34 @@
                 <div className="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-indigo-50 font-sans text-slate-800">
                     {/* HEADER */}
                     <header className="bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 text-white shadow-lg sticky top-0 z-40">
-                        <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
-                            <div className="flex items-center gap-3">
-                                <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm shadow-sm">
-                                    <BookOpen className="w-6 h-6 text-white" />
+                        <div className="max-w-6xl mx-auto px-4 py-3">
+                            <div className="flex justify-between items-center">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm shadow-sm">
+                                        <BookOpen className="w-6 h-6 text-white" />
+                                    </div>
+                                    <h1 className="text-xl md:text-2xl font-extrabold tracking-tight drop-shadow-sm">Sổ Thi Đua Lớp 7A</h1>
                                 </div>
-                                <h1 className="text-xl md:text-2xl font-extrabold tracking-tight drop-shadow-sm">Sổ Thi Đua Lớp 7</h1>
+                                {role ? (
+                                    <div className="flex items-center gap-4">
+                                        <span className="text-sm font-semibold bg-white/20 backdrop-blur-md border border-white/30 shadow-sm px-4 py-1.5 rounded-full flex items-center gap-2 transition hover:bg-white/30">
+                                            <User className="w-4 h-4"/>
+                                            {role === 'GVCN' ? 'Giáo viên CN' : 
+                                             role === 'HOC_SINH' ? 'Học sinh' :
+                                             role === 'CAN_SU' ? 'Cán sự lớp' : 
+                                             role === 'SAO_DO' ? 'Sao đỏ' : 'Tổ trưởng'}
+                                        </span>
+                                        <button onClick={handleLogout} className="bg-red-500/80 hover:bg-red-500 text-white p-2 rounded-full transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5">
+                                            <LogOut className="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="hidden md:flex text-sm font-medium opacity-90 bg-white/10 px-3 py-1 rounded-full border border-white/20">Hệ thống đánh giá điểm chuẩn</div>
+                                )}
                             </div>
-                            {role ? (
-                                <div className="flex items-center gap-4">
-                                    <span className="text-sm font-semibold bg-white/20 backdrop-blur-md border border-white/30 shadow-sm px-4 py-1.5 rounded-full flex items-center gap-2 transition hover:bg-white/30">
-                                        <User className="w-4 h-4"/>
-                                        {role === 'GVCN' ? 'Giáo viên CN' : 
-                                         role === 'CAN_SU' ? 'Cán sự lớp' : 
-                                         role === 'SAO_DO' ? 'Sao đỏ' : 'Tổ trưởng'}
-                                    </span>
-                                    <button onClick={handleLogout} className="bg-red-500/80 hover:bg-red-500 text-white p-2 rounded-full transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5">
-                                        <LogOut className="w-5 h-5" />
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="hidden md:flex text-sm font-medium opacity-90 bg-white/10 px-3 py-1 rounded-full border border-white/20">Hệ thống đánh giá điểm chuẩn</div>
-                            )}
+                            <div className="text-center mt-3 border-t border-white/20 pt-2 opacity-95 italic font-bold text-sm md:text-base drop-shadow-md">
+                                ✨ “Mỗi ngày một tiến bộ – Mỗi tuần một bứt phá – Cả lớp cùng vươn xa!” ✨
+                            </div>
                         </div>
                     </header>
 
@@ -223,6 +300,11 @@
                                         )}
                                         
                                         <NavButton 
+                                            active={view === 'GARDEN'} onClick={() => setView('GARDEN')} 
+                                            icon={<span className="text-xl leading-none">🌳</span>} label="Vườn Cây 3D" 
+                                        />
+
+                                        <NavButton 
                                             active={view === 'REPORT'} onClick={() => setView('REPORT')} 
                                             icon={<BarChart3 />} label="Bảng điểm Tuần/Tháng" 
                                         />
@@ -234,7 +316,7 @@
 
                                         <NavButton 
                                             active={view === 'CRITERIA'} onClick={() => setView('CRITERIA')} 
-                                            icon={<AlertTriangle />} label="Quy chế (30 Tiêu chí)" 
+                                            icon={<AlertTriangle />} label="Quy chế (32 Tiêu chí)" 
                                         />
                                     </nav>
                                 </div>
@@ -244,11 +326,14 @@
                                     {view === 'APPROVAL' && role === 'GVCN' && (
                                         <ApprovalView incidents={incidents} setIncidents={setIncidents} students={students} />
                                     )}
+                                    {view === 'GARDEN' && (
+                                        <GardenView incidents={incidents} students={students} />
+                                    )}
                                     {view === 'REPORT' && (
                                         <ReportView incidents={incidents} students={students} />
                                     )}
                                     {view === 'HISTORY' && (
-                                        <HistoryView incidents={incidents} role={role} students={students} />
+                                        <HistoryView incidents={incidents} setIncidents={setIncidents} role={role} students={students} />
                                     )}
                                     {view === 'CRITERIA' && (
                                         <CriteriaView />
@@ -280,18 +365,75 @@
         // --- SUB-COMPONENTS ---
 
         function LoginScreen({ onLogin }) {
+            const [showGvcnLogin, setShowGvcnLogin] = useState(false);
+            const [password, setPassword] = useState('');
+            const [error, setError] = useState('');
+
+            const handleGvcnSubmit = (e) => {
+                e.preventDefault();
+                // Mật khẩu mặc định là 123456
+                if (password === '123456') {
+                    onLogin('GVCN');
+                } else {
+                    setError('Mật khẩu không đúng! (Mặc định: 123456)');
+                }
+            };
+
+            if (showGvcnLogin) {
+                return (
+                    <div className="max-w-md mx-auto mt-16 bg-white/90 backdrop-blur-xl p-8 rounded-3xl shadow-2xl border border-white/60 text-center animate-in fade-in zoom-in duration-300">
+                        <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 text-gray-700 rounded-2xl shadow-inner flex items-center justify-center mx-auto mb-6">
+                            <Lock className="w-10 h-10" />
+                        </div>
+                        <h2 className="text-2xl font-extrabold text-gray-800 mb-2">Đăng nhập Admin</h2>
+                        <p className="text-gray-500 mb-6 text-sm">Dành riêng cho Giáo viên chủ nhiệm</p>
+                        
+                        <form onSubmit={handleGvcnSubmit} className="space-y-4">
+                            <div>
+                                <input 
+                                    type="password" 
+                                    placeholder="Nhập mật khẩu (123456)..." 
+                                    value={password}
+                                    onChange={e => {setPassword(e.target.value); setError('');}}
+                                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none transition-all text-center font-bold tracking-widest text-lg"
+                                    autoFocus
+                                />
+                                {error && <p className="text-red-500 text-sm mt-2 font-medium">{error}</p>}
+                            </div>
+                            <button type="submit" className="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 rounded-xl shadow-md transition-all">
+                                Mở khóa Sổ Thi Đua
+                            </button>
+                            <button type="button" onClick={() => {setShowGvcnLogin(false); setPassword(''); setError('');}} className="w-full text-gray-500 hover:text-gray-700 font-medium py-2">
+                                Quay lại
+                            </button>
+                        </form>
+                    </div>
+                );
+            }
+
             return (
                 <div className="max-w-md mx-auto mt-16 bg-white/90 backdrop-blur-xl p-8 rounded-3xl shadow-2xl border border-white/60 text-center transform transition-all hover:scale-[1.01] duration-300">
                     <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-600 rounded-2xl shadow-inner flex items-center justify-center mx-auto mb-6 rotate-3">
                         <ShieldAlert className="w-10 h-10 transform -rotate-3" />
                     </div>
                     <h2 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-indigo-800 mb-3">Đăng nhập Hệ thống</h2>
-                    <p className="text-gray-500 mb-8 text-sm font-medium">Chọn vai trò của bạn để truy cập sổ thi đua. GVCN có quyền duyệt cuối cùng.</p>
+                    <p className="text-gray-500 mb-8 text-sm font-medium">Chọn vai trò của bạn để truy cập sổ thi đua.</p>
                     
                     <div className="grid gap-3.5">
-                        <button onClick={() => onLogin('GVCN')} className="group relative overflow-hidden p-3.5 bg-white text-blue-700 hover:text-white rounded-xl font-bold shadow-sm border border-blue-100 transition-all flex items-center justify-center gap-2 hover:shadow-md">
-                            <div className="absolute inset-0 w-0 bg-gradient-to-r from-blue-600 to-indigo-600 transition-all duration-300 ease-out group-hover:w-full -z-10"></div>
-                            <ShieldCheck className="w-5 h-5 z-10"/> <span className="z-10">Giáo viên chủ nhiệm</span>
+                        <button onClick={() => onLogin('HOC_SINH')} className="group relative overflow-hidden p-3.5 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 hover:text-white rounded-xl font-bold shadow-sm border border-blue-200 transition-all flex items-center justify-center gap-2 hover:shadow-md hover:scale-[1.02]">
+                            <div className="absolute inset-0 w-0 bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-300 ease-out group-hover:w-full -z-10"></div>
+                            <span className="text-2xl z-10">🌳</span> <span className="z-10 text-lg">Học sinh (Xem Vườn Cây 3D)</span>
+                        </button>
+                        
+                        <div className="relative flex py-3 items-center">
+                            <div className="flex-grow border-t border-gray-200"></div>
+                            <span className="flex-shrink-0 mx-4 text-gray-400 text-xs font-bold uppercase tracking-wider">Khu vực Ghi nhận & Quản lý</span>
+                            <div className="flex-grow border-t border-gray-200"></div>
+                        </div>
+
+                        <button onClick={() => setShowGvcnLogin(true)} className="group relative overflow-hidden p-3.5 bg-white text-gray-800 hover:text-white rounded-xl font-bold shadow-sm border border-gray-300 transition-all flex items-center justify-center gap-2 hover:shadow-md">
+                            <div className="absolute inset-0 w-0 bg-gray-800 transition-all duration-300 ease-out group-hover:w-full -z-10"></div>
+                            <Lock className="w-5 h-5 z-10"/> <span className="z-10">Giáo viên chủ nhiệm</span>
                         </button>
                         <button onClick={() => onLogin('CAN_SU')} className="group relative overflow-hidden p-3.5 bg-white text-emerald-700 hover:text-white rounded-xl font-bold shadow-sm border border-emerald-100 transition-all flex items-center justify-center gap-2 hover:shadow-md">
                             <div className="absolute inset-0 w-0 bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-300 ease-out group-hover:w-full -z-10"></div>
@@ -415,37 +557,6 @@
                 return Array.from(months).sort().reverse();
             }, [incidents, currentMonthStr]);
 
-            const getScoreForPeriod = (student, filterVal, isWeek, confirmedIncidents) => {
-                let score = 100;
-                let plus = 0;
-                let minus = 0;
-                let phoneViolations = 0;
-
-                let periodIncidents = [];
-                if (isWeek) {
-                    const weekAgo = new Date();
-                    weekAgo.setDate(weekAgo.getDate() - 7);
-                    periodIncidents = confirmedIncidents.filter(i => new Date(i.date) >= weekAgo);
-                } else {
-                    periodIncidents = confirmedIncidents.filter(i => i.date.startsWith(filterVal));
-                }
-
-                const personal = periodIncidents.filter(i => i.studentId === student.id);
-                personal.forEach(inc => {
-                    if (inc.point > 0) plus += inc.point;
-                    else minus += Math.abs(inc.point);
-                    if (inc.criteriaId === 14) phoneViolations++;
-                });
-
-                const groupIncidents = periodIncidents.filter(i => i.criteriaId === 23 && i.groupId === student.group);
-                groupIncidents.forEach(inc => {
-                    minus += Math.abs(inc.point);
-                });
-
-                score = score + plus - minus;
-                return { score, plus, minus, phoneViolations };
-            };
-
             const calculateScores = () => {
                 const confirmedIncidents = incidents.filter(i => i.status === 'confirmed');
                 
@@ -472,7 +583,7 @@
                     }
 
                     return {
-                        ...st, ...data, rank: getRanking(data.score),
+                        ...st, ...data, rank: getRanking(data.score, data.plus, data.minus),
                         trendText, trendVal, trendColor
                     };
                 });
@@ -495,7 +606,7 @@
             const reportData = calculateScores();
 
             const handleExportExcel = () => {
-                const headers = ['Hang', 'STT', 'Ho va ten', 'To', 'Diem cong', 'Diem tru', 'Loi dien thoai', 'Tong diem', 'Xep loai', 'Nhan xet'];
+                const headers = ['Hang', 'STT', 'Ho va ten', 'To', 'Diem cong', 'Diem tru', 'Loi dien thoai', 'Tong diem', 'Xep loai', 'Thu hoach (Cay)', 'Nhan xet'];
                 const rows = reportData.map((st, idx) => [
                     st.position,
                     idx + 1,
@@ -506,6 +617,7 @@
                     st.phoneViolations,
                     st.score,
                     `"${st.rank.label}"`,
+                    `"${st.rank.tree}"`,
                     `"${st.trendText}"`
                 ]);
                 
@@ -576,6 +688,7 @@
                                     <th className="p-4 font-bold text-center text-rose-600">Trừ</th>
                                     <th className="p-4 font-bold text-center">Tổng điểm</th>
                                     <th className="p-4 font-bold">Xếp loại</th>
+                                    <th className="p-4 font-bold text-center text-green-600">Cây thành quả</th>
                                     <th className="p-4 font-bold">Nhận xét</th>
                                 </tr>
                             </thead>
@@ -600,9 +713,14 @@
                                         <td className="p-4 text-center font-bold text-rose-600 bg-rose-50/30">{st.minus > 0 ? `-${st.minus}` : '-'}</td>
                                         <td className="p-4 text-center font-extrabold text-lg text-gray-800 bg-gray-50/50">{st.score}</td>
                                         <td className="p-4">
-                                            <span className={`px-3 py-1.5 rounded-full text-xs font-bold shadow-sm ${st.rank.bg} ${st.rank.color} border border-white/50`}>
+                                            <span className={`px-3 py-1.5 rounded-full text-xs font-bold shadow-sm ${st.rank.bg} ${st.rank.color} border`}>
                                                 {st.rank.label}
                                             </span>
+                                        </td>
+                                        <td className="p-4 text-center">
+                                            <div className={`inline-block cursor-help ${st.rank.treeClass}`} title={`Hạt mầm -> Ra lá -> Đậu quả: ${st.rank.label}`}>
+                                                {st.rank.tree}
+                                            </div>
                                         </td>
                                         <td className="p-4">
                                             <div className={`flex items-center gap-1.5 text-sm font-bold ${st.trendColor}`}>
@@ -619,17 +737,124 @@
             );
         }
 
-        function HistoryView({ incidents, role, students }) {
+        // --- GIAO DIỆN VƯỜN CÂY 3D DÀNH CHO HỌC SINH ---
+        function GardenView({ incidents, students }) {
+            const today = new Date();
+            const currentMonthStr = today.toISOString().substring(0, 7);
+            
+            // Chế độ vườn cây mặc định xem theo Tuần cho sinh động
+            const [filterType, setFilterType] = useState('week');
+            const [selectedMonth, setSelectedMonth] = useState(currentMonthStr);
+
+            const calculateScores = () => {
+                const confirmedIncidents = incidents.filter(i => i.status === 'confirmed');
+                
+                let report = students.map(st => {
+                    const data = getScoreForPeriod(st, selectedMonth, filterType === 'week', confirmedIncidents);
+                    return { ...st, ...data, rank: getRanking(data.score, data.plus, data.minus) };
+                });
+
+                // Xếp hạng để gắn huy chương
+                report.sort((a, b) => b.score - a.score);
+                let currentRank = 1;
+                let previousScore = null;
+                report.forEach((st, idx) => {
+                    if (previousScore !== null && st.score < previousScore) {
+                        currentRank = idx + 1;
+                    }
+                    st.position = currentRank;
+                    previousScore = st.score;
+                });
+                return report;
+            };
+
+            const reportData = calculateScores();
+            const groups = [1, 2, 3, 4];
+
+            return (
+                <div className="bg-gradient-to-b from-sky-50 to-green-50 p-6 rounded-2xl border border-green-100 shadow-inner">
+                    <div className="text-center mb-8">
+                        <h2 className="text-3xl font-extrabold text-green-700 mb-2 drop-shadow-sm">🌳 VƯỜN CÂY THI ĐUA LỚP 7A 🌳</h2>
+                        <p className="text-gray-600 font-medium">Mỗi học sinh là một mầm xanh. Hãy chăm ngoan để cây ra quả ngọt nhé!</p>
+                        
+                        <div className="flex justify-center items-center gap-3 mt-4">
+                            <div className="bg-white/80 backdrop-blur-sm p-1.5 rounded-xl inline-flex shadow-sm border border-green-100">
+                                <button 
+                                    onClick={() => setFilterType('week')}
+                                    className={`px-4 py-2 rounded-lg font-bold text-sm transition ${filterType === 'week' ? 'bg-green-500 text-white shadow-md' : 'text-gray-500 hover:text-green-600'}`}
+                                >
+                                    Thành quả Tuần này
+                                </button>
+                                <button 
+                                    onClick={() => setFilterType('month')}
+                                    className={`px-4 py-2 rounded-lg font-bold text-sm transition ${filterType === 'month' ? 'bg-green-500 text-white shadow-md' : 'text-gray-500 hover:text-green-600'}`}
+                                >
+                                    Thành quả Tháng này
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-8">
+                        {groups.map(g => (
+                            <div key={g} className="bg-white/60 p-5 rounded-2xl shadow-sm border border-green-100">
+                                <h3 className="text-xl font-bold text-green-800 mb-4 border-b border-green-200 pb-2 flex items-center gap-2">
+                                    <Users className="w-5 h-5"/> Khu vườn Tổ {g}
+                                </h3>
+                                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                                    {reportData.filter(st => st.group === g).map(st => (
+                                        <div key={st.id} className="bg-white p-2 rounded-xl shadow-md border-b-4 border-green-300 flex flex-col items-center justify-end h-44 relative group hover:-translate-y-1 transition-all duration-300">
+                                            {/* Hiển thị điểm */}
+                                            <div className="absolute top-2 right-2 font-bold text-xs bg-gray-50 px-2 py-0.5 rounded-full text-gray-600 border border-gray-200">
+                                                {st.score}đ
+                                            </div>
+                                            {/* Huy chương nếu top 3 */}
+                                            {st.position <= 3 && (
+                                                <div className="absolute top-2 left-2 text-xl drop-shadow-md z-20">
+                                                    {st.position === 1 ? '🥇' : st.position === 2 ? '🥈' : '🥉'}
+                                                </div>
+                                            )}
+                                            
+                                            {/* Cây 3D */}
+                                            <div className="flex-1 flex items-end justify-center pb-2 w-full">
+                                                <div className={st.rank.treeClass} title={`Xếp loại: ${st.rank.label}`}>{st.rank.tree}</div>
+                                            </div>
+                                            
+                                            {/* Tên học sinh */}
+                                            <div className="text-center font-bold text-[11px] sm:text-xs text-gray-700 w-full pt-1.5 mt-1 border-t border-gray-100 break-words line-clamp-2 leading-tight h-9 flex items-center justify-center">
+                                                {st.name}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        function HistoryView({ incidents, setIncidents, role, students }) {
             const visibleIncidents = [...incidents].reverse().filter(inc => {
                 if (inc.criteriaId === 15 && role !== 'GVCN') return false; 
                 return true;
             });
 
+            const handleDelete = (id) => {
+                // Xóa trực tiếp ghi nhận khi có nhầm lẫn
+                setIncidents(incidents.filter(i => i.id !== id));
+            };
+
             return (
                 <div>
                     <h2 className="text-xl font-bold mb-4">Lịch sử ghi nhận</h2>
+                    <p className="text-sm text-gray-500 mb-4">Giáo viên chủ nhiệm có thể xóa các ghi nhận nếu có sự nhầm lẫn để hệ thống tính lại điểm.</p>
                     <div className="space-y-3">
-                        {visibleIncidents.map(inc => {
+                        {visibleIncidents.length === 0 ? (
+                            <div className="p-4 text-center text-gray-500 italic bg-gray-50 rounded-lg border border-gray-100">
+                                Chưa có sự việc nào được ghi nhận.
+                            </div>
+                        ) : visibleIncidents.map(inc => {
                             const student = students.find(s => s.id === inc.studentId);
                             const isGroup = inc.criteriaId === 23;
                             const c = criteriaList.find(x => x.id === inc.criteriaId);
@@ -648,8 +873,19 @@
                                             {c?.name} • Người ghi: {inc.reporterRole}
                                         </div>
                                     </div>
-                                    <div className={`font-bold ${c?.point > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                        {c?.point > 0 ? '+' : ''}{c?.point}
+                                    <div className="flex items-center gap-4">
+                                        <div className={`font-bold ${c?.point > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                            {c?.point > 0 ? '+' : ''}{c?.point}
+                                        </div>
+                                        {role === 'GVCN' && (
+                                            <button 
+                                                onClick={() => handleDelete(inc.id)}
+                                                className="flex items-center gap-1 text-xs bg-red-50 text-red-600 hover:bg-red-100 border border-red-100 px-2 py-1.5 rounded font-semibold transition"
+                                                title="Xóa do nhầm lẫn"
+                                            >
+                                                <X className="w-3 h-3"/> Xóa
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             );
@@ -663,7 +899,7 @@
             return (
                 <div>
                     <div className="mb-4">
-                        <h2 className="text-xl font-bold text-gray-800">Danh mục 30 Tiêu chí chính thức</h2>
+                        <h2 className="text-xl font-bold text-gray-800">Danh mục 32 Tiêu chí chính thức</h2>
                         <p className="text-sm text-gray-500">Mỗi học sinh mặc định có 100 điểm/tuần. Mức điểm là cố định.</p>
                     </div>
                     
@@ -757,9 +993,9 @@
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Lỗi / Thành tích (30 Tiêu chí)</label>
-                                    <select 
-                                        required value={criteriaId} onChange={e => {
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Lỗi / Thành tích (32 Tiêu chí)</label>
+                            <select 
+                                required value={criteriaId} onChange={e => {
                                             setCriteriaId(e.target.value);
                                             setStudentId(''); setGroupId(''); setReportedStudentId('');
                                         }}
